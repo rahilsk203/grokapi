@@ -14,8 +14,6 @@ app.use(cors());
 app.use(express.json());
 
 const MODEL_MAP = {
-    "gpt-4-turbo": "grok-4",
-    "gpt-3.5-turbo": "grok-3-fast",
     "grok-3": "grok-3-auto",
     "grok-fast": "grok-3-fast",
     "grok-3-fast": "grok-3-fast",
