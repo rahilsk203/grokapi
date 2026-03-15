@@ -22,6 +22,18 @@ const MODEL_MAP = {
     "grok": "grok-3-auto"
 };
 
+/**
+ * Clean Grok response by removing "Thinking" prefixes
+ */
+const cleanText = (text) => {
+    if (!text) return "";
+    return text
+        .replace(/^Thinking about your request\s*/i, "")
+        .replace(/^Thinking\.\.\.\s*/i, "")
+        .replace(/^Thought for \d+ seconds\s*/i, "")
+        .trim();
+};
+
 // Auth Middleware
 const authMiddleware = (req, res, next) => {
     const authHeader = req.headers["authorization"];
@@ -98,16 +110,52 @@ app.post("/v1/chat/completions", authMiddleware, async (req, res) => {
             }
 
             res.json({
-                id: `chatcmpl-${crypto.randomUUID()}`,
+                id: `pllns_${crypto.randomUUID().replace(/-/g, "")}`,
                 object: "chat.completion",
                 created: Math.floor(Date.now() / 1000),
                 model: model,
                 choices: [{
-                    message: { role: "assistant", content: fullText || (finalData ? finalData.response : "") },
+                    message: { 
+                        role: "assistant", 
+                        content: cleanText(fullText || (finalData ? finalData.response : "")),
+                        refusal: null,
+                        annotations: []
+                    },
                     index: 0,
-                    finish_reason: "stop"
+                    finish_reason: "stop",
+                    logprobs: null,
+                    content_filter_results: {
+                        hate: { filtered: false, severity: "safe" },
+                        protected_material_code: { filtered: false, detected: false },
+                        protected_material_text: { filtered: false, detected: false },
+                        self_harm: { filtered: false, severity: "safe" },
+                        sexual: { filtered: false, severity: "safe" },
+                        violence: { filtered: false, severity: "safe" }
+                    }
                 }],
-                usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+                usage: { 
+                    prompt_tokens: 0, 
+                    completion_tokens: 0, 
+                    total_tokens: 0,
+                    prompt_tokens_details: { audio_tokens: 0, cached_tokens: 0 },
+                    completion_tokens_details: { 
+                        accepted_prediction_tokens: 0, 
+                        audio_tokens: 0, 
+                        reasoning_tokens: 0, 
+                        rejected_prediction_tokens: 0 
+                    }
+                },
+                prompt_filter_results: [{
+                    prompt_index: 0,
+                    content_filter_results: {
+                        hate: { filtered: false, severity: "safe" },
+                        jailbreak: { filtered: false, detected: false },
+                        self_harm: { filtered: false, severity: "safe" },
+                        sexual: { filtered: false, severity: "safe" },
+                        violence: { filtered: false, severity: "safe" }
+                    }
+                }],
+                system_fingerprint: null
             });
         }
     } catch (err) {
@@ -135,7 +183,7 @@ app.post("/ask", authMiddleware, async (req, res) => {
 
         res.json({ 
             status: "success", 
-            response: fullText || (finalData ? finalData.response : ""),
+            response: cleanText(fullText || (finalData ? finalData.response : "")),
             stream_response: tokens,
             extra_data: finalData ? finalData.extra_data : null
         });
