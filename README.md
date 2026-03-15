@@ -73,11 +73,11 @@ Supports both streaming and non-streaming responses.
 ```bash
 curl http://localhost:8787/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
+  -H "Authorization: Bearer sk-antigravity-test" \
   -d '{
     "model": "grok-latest",
     "messages": [{"role": "user", "content": "Tell me a joke about programming."}],
-    "stream": true
+    "stream": false
   }'
 ```
 
@@ -89,7 +89,7 @@ A simplified endpoint for direct interaction.
 ```bash
 curl http://localhost:8787/ask \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
+  -H "Authorization: Bearer sk-antigravity-test" \
   -d '{
     "message": "What is the capital of France?",
     "model": "grok-3-fast"

@@ -316,15 +316,35 @@ export class Grok {
                             const jsonStr = line.substring(start, i + 1);
                             try {
                                 const data = JSON.parse(jsonStr);
-                                const res = data.result || {};
+                                const res = data.result || data || {};
                                 
-                                const token = res.token || (res.response && res.response.token);
-                                if (token) yield { type: "token", data: token };
+                                // Enhanced Token Extraction
+                                const token = res.token || 
+                                              (res.response && res.response.token) || 
+                                              (res.modelResponse && res.modelResponse.token);
                                 
-                                const modelRes = res.modelResponse || (res.response && res.response.modelResponse) || {};
-                                if (!fullResponse && modelRes.message) fullResponse = modelRes.message;
-                                if (!conversationId && res.conversation && res.conversation.conversationId) conversationId = res.conversation.conversationId;
-                                if (!parentResponseId && modelRes.responseId) parentResponseId = modelRes.responseId;
+                                if (token) {
+                                    yield { type: "token", data: token };
+                                }
+
+                                // Enhanced Full Response Extraction
+                                const modelRes = res.modelResponse || 
+                                                  (res.response && res.response.modelResponse) || 
+                                                  res;
+                                
+                                if (modelRes.message) {
+                                    // Always keep the longest message as the full response candidate
+                                    if (modelRes.message.length >= fullResponse.length) {
+                                        fullResponse = modelRes.message;
+                                    }
+                                }
+                                
+                                if (!conversationId && res.conversation && res.conversation.conversationId) {
+                                    conversationId = res.conversation.conversationId;
+                                }
+                                if (!parentResponseId && modelRes.responseId) {
+                                    parentResponseId = modelRes.responseId;
+                                }
                             } catch(e) {}
                         }
                     }
